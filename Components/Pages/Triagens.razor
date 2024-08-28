@@ -1,0 +1,93 @@
+﻿@page "/triagem"
+@using TriagemCaminhaoApp.Components.Data
+@inject HttpClient Http
+
+
+<PageTitle>Triagem</PageTitle>
+
+    @if (triagens is null || triagens.Count == 0)
+    {
+    <p><em>Nenhuma triagem encontrada.</em></p>
+    }
+    else
+    {
+    <MudGrid Style="height: 94vh;">
+        <MudItem xs="12" md="4">
+            <!-- Lista de triagens -->
+            <MudList>
+                @foreach (var triagem in triagensOrdenadas)
+                {
+                    <MudPaper Style="margin-bottom: 14px;">
+                        @if(triagem.PrioridadeTriagem.IsPrioridade)
+                        {
+                            <MudAlert Style="font-size: 17px" Severity="Severity.Warning" Variant="Variant.Filled" Square="true" Dense="true">Volume: @triagem.PrioridadeTriagem.Volume | Peso: @triagem.PrioridadeTriagem.Peso</MudAlert>
+                        
+                        }
+                        <MudListItem @onclick="() => selectedTriagem = triagem">
+                            <MudText Inline="true" Typo="Typo.h6"> <b> <i>@triagem.Caminhao.NomeTransportadora</i></b> </MudText>
+                            <MudDivider/>
+                            <MudText Style="margin-top: 2%"><b>Whatsapp</b>: @triagem.Caminhao.Whatsapp</MudText>
+                            <MudText><b>Chegada</b>: @triagem.DataChegada</MudText>
+                            <MudText><b>Saída</b>: @triagem.DataAtendimento</MudText>
+                            <MudText><b>Id</b>: @triagem.Id</MudText>
+
+                                <MudAlert Severity="Severity.Normal" NoIcon="true"><b>@triagem.StatusTriagem.Status</b></MudAlert>
+                        </MudListItem>
+                    </MudPaper>
+                }
+            </MudList>
+        </MudItem>
+
+        <MudDivider Vertical="true" FlexItem="true" />
+
+        <MudItem xs="16" md="7">
+            <!-- Card de detalhes da triagem selecionada -->
+            @if (selectedTriagem != null)
+            {
+                <MudCard Style="margin-top: 1%">
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6">@selectedTriagem.Caminhao.NomeTransportadora</MudText>
+                            <MudText>@selectedTriagem.Caminhao.Whatsapp</MudText>
+                            <MudText>@selectedTriagem.Mensagem</MudText>
+                            <MudText>@selectedTriagem.StatusTriagem.Status</MudText>
+                            <MudText>Data Chegada: @selectedTriagem.DataChegada</MudText>
+                            <MudText>Data Atendimento: @selectedTriagem.DataAtendimento</MudText>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary">Encaminhar Doca</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Whatsapp">Whatsapp</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Warning" StartIcon="@Icons.Material.Filled.NotificationImportant">Priorizar</MudButton>
+                        </MudCardContent>
+                    </MudCard>
+            }
+        </MudItem>
+    </MudGrid>
+
+}
+
+@code {
+    private int currentCount = 0;
+    private List<Triagem> triagens;
+    private List<Triagem> triagensOrdenadas;
+    private Triagem selectedTriagem;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Substitua a URL abaixo pela URL da sua API
+        triagens = await Http.GetFromJsonAsync<List<Triagem>>("http://localhost:5069/api/Triagems");
+
+        var filtradoTriagens = triagens
+        .Where(t => t.StatusTriagem.Status != "Atendido")
+        .ToList();
+
+        // Passo 2: Ordenar a lista filtrada por Prioridade e depois por ID
+        triagensOrdenadas = filtradoTriagens
+            .OrderByDescending(t => t.PrioridadeTriagem.IsPrioridade) // Coloca as triagens com prioridade primeiro
+            .ThenBy(t => t.Id) // Ordena por ID
+            .ToList();
+    }
+
+
+    private void IncrementCount()
+    {
+        currentCount++;
+    }
+}

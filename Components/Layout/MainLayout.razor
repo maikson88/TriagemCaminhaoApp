@@ -1,0 +1,70 @@
+﻿@inherits LayoutComponentBase
+@using TriagemCaminhaoApp.Components
+@inject NavigationManager Navigation
+
+<MyMudThemeProvider />
+<MyMudProviders />
+
+<MudLayout>
+    <MudAppBar Elevation="0" Style="background-color: #00a999; border-left-width: 1px; border-left-color: #0A8C7F">
+		<MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+
+        <MudSpacer />
+
+        <MudText Typo="Typo.h4">@PageName</MudText>
+
+        <MudSpacer />
+        
+    </MudAppBar>
+        <MudDrawer @bind-Open="_drawerOpen" Elevation="1" >
+            <MudDrawerHeader Style="border-bottom:solid; border-bottom-width: 2px; border-bottom-color: #0A8C7F; background-color: #00a999;">
+                <MudImage Style="padding-left: 25%" Height="40" Src="https://aqia.net/wp-content/uploads/2021/09/Logo-AQIA-Inova-branco-1.png" Alt="Logo AQIA" />
+
+        </MudDrawerHeader>
+        <NavMenu />
+    </MudDrawer>
+        <MudMainContent>
+            <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" >
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    bool _drawerOpen = true;
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private string PageName;
+
+    protected override void OnInitialized()
+    {
+        // Inicializa o nome da página
+        UpdatePageName();
+
+        // Escuta mudanças na URL
+        Navigation.LocationChanged += HandleLocationChanged;
+    }
+
+    private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        UpdatePageName();
+        InvokeAsync(StateHasChanged); // Força a atualização do componente
+    }
+
+    private void UpdatePageName()
+    {
+        var uri = Navigation.Uri;
+        PageName = uri.Split('/').LastOrDefault();
+        if (string.IsNullOrWhiteSpace(PageName)) PageName = "Início";
+        PageName = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(PageName);
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= HandleLocationChanged; // Desinscreve para evitar memory leaks
+    }
+}
