@@ -1,0 +1,59 @@
+﻿@inject ISnackbar Snackbar
+@inject HttpClient Http
+
+
+<MudDialog>
+    <DialogContent>
+        <MudText>Tem certeza que deseja priorizar <b>@ContentText</b> ?</MudText>
+
+        <MudTextField @bind-Value="Volume" Label="Volume" HelperText="ex.: 12" Variant="Variant.Outlined" Immediate="true"/>
+        <MudTextField @bind-Value="Peso" Label="Peso" HelperText="ex: 12KG / 12GR" Variant="Variant.Outlined" Immediate="true" />
+        </DialogContent>
+        <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Warning" Variant="Variant.Filled" OnClick="Submit" Disabled="@IsDisabled">Priorizar</MudButton>
+        </DialogActions>
+    </MudDialog>
+@code {
+
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public string ContentText { get; set; }
+
+    [Parameter]
+    public int Id { get; set; }
+
+    private string Volume;
+    private string Peso;
+
+    private bool IsDisabled => string.IsNullOrWhiteSpace(Volume) || string.IsNullOrWhiteSpace(Peso);
+
+
+    private async Task Submit()
+    {
+        try
+        {
+            var response = await Http.PutAsync($"http://localhost:5069/api/Triagems/priorizar/{Id}?volume={Volume}&peso={Peso}", null);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // A requisição foi bem-sucedida
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                // A requisição falhou
+                Snackbar.Add("Falha ao Priorizar triagem. Tente novamente.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Exibir erro em caso de exceção
+            Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

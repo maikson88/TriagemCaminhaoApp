@@ -7,8 +7,8 @@
         public Doca Doca { get; set; }
         public StatusTriagem StatusTriagem { get; set; }
         public PrioridadeTriagem PrioridadeTriagem { get; set; }
-        public string Mensagem { get; set; }
         public DateTime DataChegada { get; set; }
         public DateTime? DataAtendimento { get; set; }
+        public DateTime? DataSaida { get; set; }
     }
 }

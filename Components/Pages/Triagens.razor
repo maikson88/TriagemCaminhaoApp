@@ -1,6 +1,9 @@
 ﻿@page "/triagem"
 @using TriagemCaminhaoApp.Components.Data
 @inject HttpClient Http
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
 
 
 <PageTitle>Triagem</PageTitle>
@@ -21,17 +24,29 @@
                         @if(triagem.PrioridadeTriagem.IsPrioridade)
                         {
                             <MudAlert Style="font-size: 17px" Severity="Severity.Warning" Variant="Variant.Filled" Square="true" Dense="true">Volume: @triagem.PrioridadeTriagem.Volume | Peso: @triagem.PrioridadeTriagem.Peso</MudAlert>
-                        
                         }
                         <MudListItem @onclick="() => selectedTriagem = triagem">
                             <MudText Inline="true" Typo="Typo.h6"> <b> <i>@triagem.Caminhao.NomeTransportadora</i></b> </MudText>
                             <MudDivider/>
                             <MudText Style="margin-top: 2%"><b>Whatsapp</b>: @triagem.Caminhao.Whatsapp</MudText>
                             <MudText><b>Chegada</b>: @triagem.DataChegada</MudText>
-                            <MudText><b>Saída</b>: @triagem.DataAtendimento</MudText>
+                            @if (@triagem.StatusTriagem.Status == "Atendendo")
+                            {
+                                <MudText><b>Atendimento</b>: @triagem.DataAtendimento</MudText>
+                                <MudText><b>Doca</b>: @triagem.Doca.NomeDoca</MudText>
+                            }
                             <MudText><b>Id</b>: @triagem.Id</MudText>
+                            <div style="text-align: right;">
+                                @if (@triagem.StatusTriagem.Status == "Aguardando")
+                                {
+                                    <MudChip Icon="@Icons.Material.Filled.AccessAlarm" Label="true" Color="Color.Surface" Variant="Variant.Outlined">@triagem.StatusTriagem.Status</MudChip>
+                                }
+                                else
+                                {
 
-                                <MudAlert Severity="Severity.Normal" NoIcon="true"><b>@triagem.StatusTriagem.Status</b></MudAlert>
+                                    <MudChip Icon="@Icons.Material.Filled.LocalShipping" Label="true" Color="Color.Primary" Variant="Variant.Outlined">@triagem.StatusTriagem.Status</MudChip>
+                                }
+                            </div>
                         </MudListItem>
                     </MudPaper>
                 }
@@ -47,20 +62,52 @@
                 <MudCard Style="margin-top: 1%">
                     <MudCardContent>
                         <MudText Typo="Typo.h6">@selectedTriagem.Caminhao.NomeTransportadora</MudText>
-                            <MudText>@selectedTriagem.Caminhao.Whatsapp</MudText>
-                            <MudText>@selectedTriagem.Mensagem</MudText>
-                            <MudText>@selectedTriagem.StatusTriagem.Status</MudText>
-                            <MudText>Data Chegada: @selectedTriagem.DataChegada</MudText>
-                            <MudText>Data Atendimento: @selectedTriagem.DataAtendimento</MudText>
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary">Encaminhar Doca</MudButton>
-                            <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Whatsapp">Whatsapp</MudButton>
-                            <MudButton Variant="Variant.Filled" Color="Color.Warning" StartIcon="@Icons.Material.Filled.NotificationImportant">Priorizar</MudButton>
+                            <MudDivider />
+                            <MudText Style="margin-top: 2%"><b>Whatsapp</b>: @selectedTriagem.Caminhao.Whatsapp</MudText>
+                            <MudText><b>Status</b>: @selectedTriagem.StatusTriagem.Status</MudText>
+                            <MudText><b>DataChegada</b>: @selectedTriagem.DataChegada</MudText>
+                            <MudText><b>DataAtendimento</b>: @selectedTriagem.DataAtendimento</MudText>
+                            <MudGrid Style="border: solid; border-radius: 10px; margin-top: 2%; border-color: lightgray">
+                                <MudItem xs="4">
+                                    <!-- Botão na esquerda -->
+                                    <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Whatsapp">
+                                        Whatsapp
+                                    </MudButton>
+                                </MudItem>
+
+                                <MudItem xs="4" Class="d-flex justify-center">
+                                    <!-- Botão no centro -->
+                                    @if (selectedTriagem.PrioridadeTriagem.IsPrioridade)
+                                {
+                                    <MudButton Variant="Variant.Filled" Color="Color.Tertiary" StartIcon="@Icons.Material.Filled.NotificationImportant" @onclick="DespriorizarButton">
+                                        Despriorizar
+                                    </MudButton>
+                                }
+                                else
+                                {
+                                    <MudButton Variant="Variant.Filled" Color="Color.Warning" StartIcon="@Icons.Material.Filled.NotificationImportant" @onclick="PriorizarButton">
+                                        Priorizar
+                                    </MudButton>
+                                }
+                            </MudItem>
+
+                            <MudItem xs="4" Class="d-flex justify-end">
+                                <!-- Botão na direita -->
+                                @if (selectedTriagem.StatusTriagem.Status == "Aguardando")
+                                {
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" @onclick="EncaminharButton"> Encaminhar Doca </MudButton>
+                                }
+                                else
+                                {
+                                    <MudButton Variant="Variant.Filled" Color="Color.Error" @onclick="FinalizarButton"> Finalizar Atendimento </MudButton>
+                                }
+                            </MudItem>
+                        </MudGrid>
                         </MudCardContent>
                     </MudCard>
             }
         </MudItem>
     </MudGrid>
-
 }
 
 @code {
@@ -69,10 +116,15 @@
     private List<Triagem> triagensOrdenadas;
     private Triagem selectedTriagem;
 
+    public List<Doca> Docas { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
+        Docas = await Http.GetFromJsonAsync<List<Doca>>("http://localhost:5069/api/Docas");
+
         // Substitua a URL abaixo pela URL da sua API
         triagens = await Http.GetFromJsonAsync<List<Triagem>>("http://localhost:5069/api/Triagems");
+
 
         var filtradoTriagens = triagens
         .Where(t => t.StatusTriagem.Status != "Atendido")
@@ -85,9 +137,60 @@
             .ToList();
     }
 
-
-    private void IncrementCount()
+    private async Task PriorizarButton()
     {
-        currentCount++;
+        var parameters = new DialogParameters<DialogPriorizar>
+        {
+            { x => x.ContentText, selectedTriagem.Caminhao.NomeTransportadora },
+            { x => x.Id, selectedTriagem.Id }
+        };
+
+        var dialog = await DialogService.ShowAsync<DialogPriorizar>("Priorizar", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await OnInitializedAsync();
+        }
+    }
+
+    private async Task DespriorizarButton()
+    {
+        var parameters = new DialogParameters<DialogDespriorizar>
+        {
+            { x => x.ContentText, selectedTriagem.Caminhao.NomeTransportadora },
+            { x => x.Id, selectedTriagem.Id }
+        };
+
+        var dialog = await DialogService.ShowAsync<DialogDespriorizar>("Despriorizar", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await OnInitializedAsync();
+        }
+    }
+
+    private async Task EncaminharButton()
+    {
+        var parameters = new DialogParameters<DialogEncaminharDoca>
+        {
+            { x => x.ContentText, selectedTriagem.Caminhao.NomeTransportadora },
+            { x => x.TriagemID, selectedTriagem.Id },
+            { x => x.Docas, Docas }
+        };
+
+        var dialog = await DialogService.ShowAsync<DialogEncaminharDoca>("Encaminhar Doca", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await OnInitializedAsync();
+        }
+    }
+
+    private async Task FinalizarButton()
+    {
+
     }
 }

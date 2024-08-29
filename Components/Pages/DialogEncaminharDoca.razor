@@ -1,0 +1,74 @@
+﻿@using TriagemCaminhaoApp.Components.Data
+@inject ISnackbar Snackbar
+@inject HttpClient Http
+
+<MudDialog>
+    <DialogContent>
+        <MudText>Selecione a Doca para encaminhar <b>@ContentText</b> </MudText>
+
+@*         <MudSelect Margin="Margin.Dense" T="int?" Label="Doca" Variant="Variant.Outlined" @bind-Value="DocaID">
+            @foreach (var doca in Docas)
+            {
+                <MudSelectItem Value="@(doca.Id)">@doca.NomeDoca</MudSelectItem>
+            }
+        </MudSelect> *@
+
+        <MudSelect Margin="Margin.Dense" T="string" Label="Selecione a Doca" Variant="Variant.Text" @bind-Value="selectedDocaNome">
+            @foreach (var doca in Docas)
+            {
+                <MudSelectItem Value="@(doca.NomeDoca)" />
+            }
+        </MudSelect>
+
+
+
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Warning" Variant="Variant.Filled" OnClick="Submit" Disabled="@IsDisabled">Priorizar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public string ContentText { get; set; }
+
+    [Parameter]
+    public int TriagemID { get; set; }
+
+    [Parameter]
+    public List<Doca> Docas { get; set; }
+
+    private string selectedDocaNome { get; set; }
+
+    private bool IsDisabled => selectedDocaNome == null;
+
+    private async Task Submit()
+    {
+        try
+        {
+            var selectedDoca = Docas.FirstOrDefault(d => d.NomeDoca == selectedDocaNome);
+
+            var response = await Http.PutAsync($"http://localhost:5069/api/Triagems/atendendo/{TriagemID}?docaId={selectedDoca.Id}", null);
+
+            if (response.IsSuccessStatusCode)
+            {
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add("Falha ao Encaminhar Doca. Tente novamente.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

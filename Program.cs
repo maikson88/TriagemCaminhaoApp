@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Hosting;
 using MudBlazor.Services;
 using TriagemCaminhaoApp.Components;
 
@@ -11,7 +12,6 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddMudServices();
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
