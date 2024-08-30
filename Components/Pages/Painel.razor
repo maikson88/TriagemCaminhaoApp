@@ -67,26 +67,9 @@
     private List<Triagem> triagensDoca03 = new List<Triagem>();
     private List<Triagem> triagensDoca04 = new List<Triagem>();
     private List<Triagem> triagensOrdenadas;
-    private Timer _timer;
+    private Timer timer;
 
     protected override async Task OnInitializedAsync()
-    {
-        await CarregarTriagens();
-        _timer = new Timer(AtualizarDados, null, 0, 10000); // Atualiza a cada 10 segundos
-
-    }
-
-    private async void AtualizarDados(object state)
-    {
-        // Invoca o código no contexto correto para atualizar a UI
-        await InvokeAsync(async () =>
-        {
-            await CarregarTriagens();
-            StateHasChanged(); // Solicita a atualização da UI
-        });
-    }
-
-    private async Task CarregarTriagens()
     {
         // Obtenha as triagens da API
         triagens = await Http.GetFromJsonAsync<List<Triagem>>("http://localhost:5069/api/Triagems");
@@ -109,12 +92,15 @@
         triagensDoca03 = triagensOrdenadas.Where(t => t.Doca?.NomeDoca == "Doca 03").ToList();
         triagensDoca04 = triagensOrdenadas.Where(t => t.Doca?.NomeDoca == "Doca 04").ToList();
 
-        StateHasChanged(); // Atualiza a UI
-    }
+        timer = new System.Threading.Timer(async (object? stateInfo) =>
+        {
+            await InvokeAsync(() =>
+            {
+                OnInitializedAsync();
+                StateHasChanged(); // NOTE: MUST CALL StateHasChanged() BECAUSE THIS IS TRIGGERED BY A TIMER INSTEAD OF A USER EVENT                
+            });
 
-    public void Dispose()
-    {
-        _timer?.Dispose();
+        }, new System.Threading.AutoResetEvent(false), 10000, 10000); // fire every 2000 milliseconds
     }
 
     private string GetCardClass(Triagem triagem, List<Triagem> triagensDoca)
