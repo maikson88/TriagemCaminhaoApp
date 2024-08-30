@@ -2,6 +2,8 @@
 @using System.Linq
 @using TriagemCaminhaoApp.Components.Data
 @inject HttpClient Http
+@implements IDisposable
+
 
 <style>
     .bg-attending {
@@ -71,6 +73,21 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await GetTriagens();
+
+        timer = new System.Threading.Timer(async (object? stateInfo) =>
+        {
+            await InvokeAsync(() =>
+            {
+                OnTimerElapsed();
+                StateHasChanged(); // NOTE: MUST CALL StateHasChanged() BECAUSE THIS IS TRIGGERED BY A TIMER INSTEAD OF A USER EVENT                
+            });
+
+        }, new System.Threading.AutoResetEvent(false), 10000, 10000); 
+    }
+
+    private async Task GetTriagens()
+    {
         // Obtenha as triagens da API
         triagens = await Http.GetFromJsonAsync<List<Triagem>>("http://localhost:5069/api/Triagems");
 
@@ -91,16 +108,20 @@
         triagensDoca02 = triagensOrdenadas.Where(t => t.Doca?.NomeDoca == "Doca 02").ToList();
         triagensDoca03 = triagensOrdenadas.Where(t => t.Doca?.NomeDoca == "Doca 03").ToList();
         triagensDoca04 = triagensOrdenadas.Where(t => t.Doca?.NomeDoca == "Doca 04").ToList();
+    }
 
-        timer = new System.Threading.Timer(async (object? stateInfo) =>
-        {
-            await InvokeAsync(() =>
-            {
-                OnInitializedAsync();
-                StateHasChanged(); // NOTE: MUST CALL StateHasChanged() BECAUSE THIS IS TRIGGERED BY A TIMER INSTEAD OF A USER EVENT                
-            });
+    private async Task OnTimerElapsed()
+    {
+        // Método que será chamado pelo timer
+        GetTriagens();
+        // Adicione a lógica para atualizar a página ou buscar novos dados
+        await Task.CompletedTask;
+    }
 
-        }, new System.Threading.AutoResetEvent(false), 10000, 10000); // fire every 2000 milliseconds
+    public void Dispose()
+    {
+        // Limpa o timer quando o componente for descartado
+        timer?.Dispose();
     }
 
     private string GetCardClass(Triagem triagem, List<Triagem> triagensDoca)
