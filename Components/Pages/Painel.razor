@@ -1,0 +1,129 @@
+﻿@page "/painel"
+@using System.Linq
+@using TriagemCaminhaoApp.Components.Data
+@inject HttpClient Http
+
+<style>
+    .bg-attending {
+        background-color: #03DAC5; /* Cor dourada para destacar */
+        color: black; /* Cor do texto */
+    }
+</style>
+
+<MudGrid>
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="d-flex flex-column" Style="height: 100%; background-color: lightblue; border-top-left-radius: 0px; border-top-right-radius: 0px">
+            <MudText Style="font-weight:bolder" GutterBottom="true" Typo="Typo.h1" Align="Align.Center">Doca 01</MudText>
+            @foreach (var triagem in triagensDoca01)
+            {
+                <MudPaper Square="true"  Elevation="1" Class="@GetCardClass(triagem, triagensDoca01)" Style="padding: 16px; margin-bottom: 16px;">
+                    <MudText Style="font-weight:bolder" Typo="Typo.h2" Align="Align.Center">@triagem.Id</MudText>
+                </MudPaper>
+            }
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="d-flex flex-column" Style="height: 100%; background-color: lightgreen; border-top-left-radius: 0px; border-top-right-radius: 0px">
+            <MudText Style="font-weight:bolder" GutterBottom="true" Typo="Typo.h1" Align="Align.Center">Doca 02</MudText>
+            @foreach (var triagem in triagensDoca02)
+            {
+                <MudPaper Square="true" Elevation="1" Class="@GetCardClass(triagem, triagensDoca02)" Style="padding: 16px; margin-bottom: 16px;">
+                    <MudText Style="font-weight:bolder" Typo="Typo.h2" Align="Align.Center">@triagem.Id</MudText>
+                    </MudPaper>
+            }
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="d-flex flex-column" Style="height: 100%; background-color: lightcoral; border-top-left-radius: 0px; border-top-right-radius: 0px">
+            <MudText Style="font-weight:bolder" GutterBottom="true" Typo="Typo.h1" Align="Align.Center">Doca 03</MudText>
+            @foreach (var triagem in triagensDoca03)
+            {
+                <MudPaper Square="true" Elevation="1" Class="@GetCardClass(triagem, triagensDoca03)" Style="padding: 16px; margin-bottom: 16px;">
+                    <MudText Style="font-weight:bolder" Typo="Typo.h2" Align="Align.Center">@triagem.Id</MudText>
+                    </MudPaper>
+            }
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="d-flex flex-column" Style="height: 100%; background-color: lightgoldenrodyellow; border-top-left-radius: 0px; border-top-right-radius: 0px">
+            <MudText Style="font-weight:bolder" GutterBottom="true" Typo="Typo.h1" Align="Align.Center">Doca 04</MudText>
+            @foreach (var triagem in triagensDoca04)
+            {
+                <MudPaper Square="true" Elevation="1" Class="@GetCardClass(triagem, triagensDoca04)" Style="padding: 16px; margin-bottom: 16px">
+                    <MudText Style="font-weight:bolder" Typo="Typo.h2" Align="Align.Center">@triagem.Id</MudText>
+                </MudPaper>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<Triagem> triagens = new List<Triagem>();
+    private List<Triagem> triagensDoca01 = new List<Triagem>();
+    private List<Triagem> triagensDoca02 = new List<Triagem>();
+    private List<Triagem> triagensDoca03 = new List<Triagem>();
+    private List<Triagem> triagensDoca04 = new List<Triagem>();
+    private List<Triagem> triagensOrdenadas;
+    private Timer _timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarTriagens();
+        _timer = new Timer(AtualizarDados, null, 0, 10000); // Atualiza a cada 10 segundos
+
+    }
+
+    private async void AtualizarDados(object state)
+    {
+        // Invoca o código no contexto correto para atualizar a UI
+        await InvokeAsync(async () =>
+        {
+            await CarregarTriagens();
+            StateHasChanged(); // Solicita a atualização da UI
+        });
+    }
+
+    private async Task CarregarTriagens()
+    {
+        // Obtenha as triagens da API
+        triagens = await Http.GetFromJsonAsync<List<Triagem>>("http://localhost:5069/api/Triagems");
+
+        // Separando as triagens para cada doca
+
+        var filtradoTriagens = triagens
+        .Where(t => t.StatusTriagem.Status != "Atendido")
+        .ToList();
+
+        // Passo 2: Ordenar a lista filtrada por Prioridade e depois por ID
+        triagensOrdenadas = filtradoTriagens
+            .OrderByDescending(t => t.PrioridadeTriagem.IsPrioridade) // Coloca as triagens com prioridade primeiro
+            .ThenBy(t => t.Id) // Ordena por ID
+            .ToList();
+
+        // Separando as triagens para cada doca
+        triagensDoca01 = triagensOrdenadas.Where(t => t.Doca?.NomeDoca == "Doca 01").ToList();
+        triagensDoca02 = triagensOrdenadas.Where(t => t.Doca?.NomeDoca == "Doca 02").ToList();
+        triagensDoca03 = triagensOrdenadas.Where(t => t.Doca?.NomeDoca == "Doca 03").ToList();
+        triagensDoca04 = triagensOrdenadas.Where(t => t.Doca?.NomeDoca == "Doca 04").ToList();
+
+        StateHasChanged(); // Atualiza a UI
+    }
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
+    }
+
+    private string GetCardClass(Triagem triagem, List<Triagem> triagensDoca)
+    {
+        // Se a triagem for a primeira da lista (a que está sendo atendida), altere a cor de fundo
+        if (triagensDoca.FirstOrDefault() == triagem)
+        {
+            return "bg-attending"; // Classe CSS que define a cor de fundo do cartão sendo atendido
+        }
+        return string.Empty;
+    }
+}

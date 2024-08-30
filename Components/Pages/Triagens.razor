@@ -191,6 +191,18 @@
 
     private async Task FinalizarButton()
     {
+        var parameters = new DialogParameters<DialogFinalizar>
+        {
+            { x => x.ContentText, selectedTriagem.Caminhao.NomeTransportadora },
+            { x => x.Id, selectedTriagem.Id }
+        };
 
+        var dialog = await DialogService.ShowAsync<DialogFinalizar>("Finalizar", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await OnInitializedAsync();
+        }
     }
 }

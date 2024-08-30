@@ -1,0 +1,50 @@
+﻿@inject ISnackbar Snackbar
+@inject HttpClient Http
+
+
+<MudDialog>
+    <DialogContent>
+        <MudText>Tem certeza que deseja finalizar o atendimento de <b>@ContentText</b> ?</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="Submit">Finalizar</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public string ContentText { get; set; }
+
+    [Parameter]
+    public int Id { get; set; }
+
+    private async Task Submit()
+    {
+        try
+        {
+            var response = await Http.PutAsync($"http://localhost:5069/api/Triagems/atendido/{Id}", null);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // A requisição foi bem-sucedida
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                // A requisição falhou
+                Snackbar.Add("Falha ao Finalizar triagem. Tente novamente.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Exibir erro em caso de exceção
+            Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}
