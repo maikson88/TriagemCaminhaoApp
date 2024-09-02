@@ -17,6 +17,9 @@
     <MudGrid Style="height: 94vh;">
         <MudItem xs="12" md="4" Style="overflow-y: auto; height: 100%;">
             <!-- Lista de triagens -->
+            <MudButton Style="margin-top:3%" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddCircle" @onclick="AddCaminhaoButton">
+                Novo
+            </MudButton>
             <MudList>
                 @foreach (var triagem in triagensOrdenadas)
                 {
@@ -198,6 +201,17 @@
         };
 
         var dialog = await DialogService.ShowAsync<DialogFinalizar>("Finalizar", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await OnInitializedAsync();
+        }
+    }
+
+    private async Task AddCaminhaoButton()
+    {
+        var dialog = await DialogService.ShowAsync<DialogNovoCaminhao>("Criar");
         var result = await dialog.Result;
 
         if (!result.Canceled)

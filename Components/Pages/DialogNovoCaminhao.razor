@@ -1,0 +1,66 @@
+﻿@inject ISnackbar Snackbar
+@inject HttpClient Http
+@using TriagemCaminhaoApp.Components.Data
+
+<MudDialog>
+    <DialogContent>
+        <MudText>Adicionar um novo caminhão à triagem ?</MudText>
+
+        <MudTextField @bind-Value="NomeTransportadora" Label="NomeTransportadora" HelperText="ex.: Braspress" Variant="Variant.Outlined" Immediate="true" />
+        <MudTextField @bind-Value="WhatsApp" Label="WhatsApp" HelperText="5511911112222" Variant="Variant.Outlined" Immediate="true" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="@IsDisabled">Criar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public string ContentText { get; set; }
+
+    private string NomeTransportadora;
+    private string WhatsApp;
+
+    private bool IsDisabled => string.IsNullOrWhiteSpace(NomeTransportadora) || string.IsNullOrWhiteSpace(WhatsApp);
+
+    private Caminhao caminhao;
+
+
+    private async Task Submit()
+    {
+        try
+        {
+                caminhao = new Caminhao
+                {
+                    NomeTransportadora = NomeTransportadora,
+                    Whatsapp = WhatsApp
+                };
+
+
+            var response = await Http.PostAsJsonAsync("http://localhost:5069/api/Caminhoes", caminhao);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // A requisição foi bem-sucedida
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                // A requisição falhou
+                Snackbar.Add("Falha ao criar caminhão.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Exibir erro em caso de exceção
+            Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}
