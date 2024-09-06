@@ -1,5 +1,6 @@
 ﻿@page "/triagem"
 @using TriagemCaminhaoApp.Components.Data
+@using TriagemCaminhaoApp.Enums
 @inject HttpClient Http
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -33,14 +34,14 @@
                             <MudDivider/>
                             <MudText Style="margin-top: 2%"><b>Whatsapp</b>: @triagem.Caminhao.Whatsapp</MudText>
                             <MudText><b>Chegada</b>: @triagem.DataChegada</MudText>
-                            @if (@triagem.StatusTriagem.Status == "Atendendo")
+                                @if (@triagem.StatusTriagem.Status == StatusCaminhaoEnum.Atendendo.ToString())
                             {
                                 <MudText><b>Atendimento</b>: @triagem.DataAtendimento</MudText>
                                 <MudText><b>Doca</b>: @triagem.Doca.NomeDoca</MudText>
                             }
                             <MudText><b>Id</b>: @triagem.Id</MudText>
                             <div style="text-align: right;">
-                                @if (@triagem.StatusTriagem.Status == "Aguardando")
+                                    @if (@triagem.StatusTriagem.Status == StatusCaminhaoEnum.Aguardando.ToString())
                                 {
                                     <MudChip Icon="@Icons.Material.Filled.AccessAlarm" Label="true" Color="Color.Surface" Variant="Variant.Outlined">@triagem.StatusTriagem.Status</MudChip>
                                 }
@@ -71,14 +72,14 @@
                             <MudText><b>DataChegada</b>: @selectedTriagem.DataChegada</MudText>
                             <MudText><b>DataAtendimento</b>: @selectedTriagem.DataAtendimento</MudText>
                             <MudGrid Style="border: solid; border-radius: 10px; margin-top: 2%; border-color: lightgray">
-                                <MudItem xs="4">
+                                <MudItem xs="3">
                                     <!-- Botão na esquerda -->
                                     <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Whatsapp">
                                         Whatsapp
                                     </MudButton>
                                 </MudItem>
 
-                                <MudItem xs="4" Class="d-flex justify-center">
+                                <MudItem xs="3">
                                     <!-- Botão no centro -->
                                     @if (selectedTriagem.PrioridadeTriagem.IsPrioridade)
                                 {
@@ -94,17 +95,22 @@
                                 }
                             </MudItem>
 
-                            <MudItem xs="4" Class="d-flex justify-end">
-                                <!-- Botão na direita -->
-                                @if (selectedTriagem.StatusTriagem.Status == "Aguardando")
-                                {
-                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" @onclick="EncaminharButton"> Encaminhar Doca </MudButton>
-                                }
-                                else
-                                {
-                                    <MudButton Variant="Variant.Filled" Color="Color.Error" @onclick="FinalizarButton"> Finalizar Atendimento </MudButton>
-                                }
+                            <MudItem xs="3">
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" @onclick="EncaminharButton"> Encaminhar  </MudButton>
                             </MudItem>
+
+                            @if (selectedTriagem.StatusTriagem.Status == StatusCaminhaoEnum.Atendendo.ToString())
+                            {
+                                <MudItem xs="3">
+                                        <MudButton Variant="Variant.Filled" Color="Color.Error" @onclick="FinalizarButton"> Finalizar  </MudButton>
+                                </MudItem>
+                            }
+                            else
+                            {
+                                <MudItem xs="3">
+                                    <MudButton Disabled="true" Variant="Variant.Filled" Color="Color.Error" @onclick="FinalizarButton"> Finalizar  </MudButton>
+                                </MudItem>
+                            }
                         </MudGrid>
                         </MudCardContent>
                     </MudCard>
@@ -130,7 +136,7 @@
 
 
         var filtradoTriagens = triagens
-        .Where(t => t.StatusTriagem.Status != "Atendido")
+        .Where(t => t.StatusTriagem.Status != StatusCaminhaoEnum.Atendido.ToString())
         .ToList();
 
         // Passo 2: Ordenar a lista filtrada por Prioridade e depois por ID

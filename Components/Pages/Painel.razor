@@ -20,6 +20,7 @@
             {
                 <MudPaper Square="true"  Elevation="1" Class="@GetCardClass(triagem, triagensDoca01)" Style="padding: 16px; margin-bottom: 16px;">
                     <MudText Style="font-weight:bolder" Typo="Typo.h2" Align="Align.Center">@triagem.Id</MudText>
+                    <MudText Style="font-weight:bolder" Typo="Typo.h6" Align="Align.Center">@triagem.Caminhao.NomeTransportadora</MudText>
                 </MudPaper>
             }
         </MudPaper>
@@ -32,7 +33,8 @@
             {
                 <MudPaper Square="true" Elevation="1" Class="@GetCardClass(triagem, triagensDoca02)" Style="padding: 16px; margin-bottom: 16px;">
                     <MudText Style="font-weight:bolder" Typo="Typo.h2" Align="Align.Center">@triagem.Id</MudText>
-                    </MudPaper>
+                    <MudText Style="font-weight:bolder" Typo="Typo.h6" Align="Align.Center">@triagem.Caminhao.NomeTransportadora</MudText>
+                </MudPaper>
             }
         </MudPaper>
     </MudItem>
@@ -44,7 +46,8 @@
             {
                 <MudPaper Square="true" Elevation="1" Class="@GetCardClass(triagem, triagensDoca03)" Style="padding: 16px; margin-bottom: 16px;">
                     <MudText Style="font-weight:bolder" Typo="Typo.h2" Align="Align.Center">@triagem.Id</MudText>
-                    </MudPaper>
+                    <MudText Style="font-weight:bolder" Typo="Typo.h6" Align="Align.Center">@triagem.Caminhao.NomeTransportadora</MudText>
+                </MudPaper>
             }
         </MudPaper>
     </MudItem>
@@ -55,11 +58,33 @@
             @foreach (var triagem in triagensDoca04)
             {
                 <MudPaper Square="true" Elevation="1" Class="@GetCardClass(triagem, triagensDoca04)" Style="padding: 16px; margin-bottom: 16px">
-                    <MudText Style="font-weight:bolder" Typo="Typo.h2" Align="Align.Center">@triagem.Id</MudText>
+                    <MudText Style="font-weight:bolder" Typo="Typo.h3" Align="Align.Center">@triagem.Id</MudText>
+                    <MudText Style="font-weight:bolder" Typo="Typo.h6" Align="Align.Center">@triagem.Caminhao.NomeTransportadora</MudText>
                 </MudPaper>
             }
         </MudPaper>
     </MudItem>
+
+
+    <!-- Novo item para exibir os cards "Aguardando" com alinhamento horizontal -->
+    <MudItem xs="12">
+        <MudPaper Class="d-flex align-items-center" Style="height: 100%; background-color: lightgray; padding: 8px;">
+            <!-- Nome "Aguardando" na lateral esquerda -->
+            <MudText Style="font-weight:bolder; margin-right: 16px;" Typo="Typo.h1" Align="Align.Left">Aguardando</MudText>
+            <br>
+            <!-- Cards "Aguardando" em fila horizontal -->
+            <div class="d-flex flex-row flex-wrap">
+                @foreach (var triagem in triagensAguardando)
+                {
+                    <MudPaper Square="true" Elevation="1" Style="padding: 30px; margin-right: 8px; min-width: 80px;">
+                        <MudText Style="font-weight:bolder" Typo="Typo.h4" Align="Align.Center">@triagem.Id</MudText>
+                            <MudText Style="font-weight:bolder" Typo="Typo.h6" Align="Align.Center">@triagem.Caminhao.NomeTransportadora</MudText>
+                    </MudPaper>
+                }
+            </div>
+        </MudPaper>
+    </MudItem>
+
 </MudGrid>
 
 @code {
@@ -68,6 +93,7 @@
     private List<Triagem> triagensDoca02 = new List<Triagem>();
     private List<Triagem> triagensDoca03 = new List<Triagem>();
     private List<Triagem> triagensDoca04 = new List<Triagem>();
+    private List<Triagem> triagensAguardando = new List<Triagem>();
     private List<Triagem> triagensOrdenadas;
     private Timer timer;
 
@@ -103,11 +129,13 @@
             .ThenBy(t => t.Id) // Ordena por ID
             .ToList();
 
+
         // Separando as triagens para cada doca
-        triagensDoca01 = triagensOrdenadas.Where(t => t.Doca?.NomeDoca == "Doca 01").ToList();
-        triagensDoca02 = triagensOrdenadas.Where(t => t.Doca?.NomeDoca == "Doca 02").ToList();
-        triagensDoca03 = triagensOrdenadas.Where(t => t.Doca?.NomeDoca == "Doca 03").ToList();
-        triagensDoca04 = triagensOrdenadas.Where(t => t.Doca?.NomeDoca == "Doca 04").ToList();
+        triagensDoca01 = triagensOrdenadas.Where(t => t.Doca?.NomeDoca == "Doca 01").Take(4).ToList();
+        triagensDoca02 = triagensOrdenadas.Where(t => t.Doca?.NomeDoca == "Doca 02").Take(4).ToList();
+        triagensDoca03 = triagensOrdenadas.Where(t => t.Doca?.NomeDoca == "Doca 03").Take(4).ToList();
+        triagensDoca04 = triagensOrdenadas.Where(t => t.Doca?.NomeDoca == "Doca 04").Take(4).ToList();
+        triagensAguardando = triagensOrdenadas.Where(t => t.Doca == null).ToList();
     }
 
     private async Task OnTimerElapsed()
