@@ -17,10 +17,15 @@
     {
     <MudGrid Style="height: 94vh;">
         <MudItem xs="12" md="4" Style="overflow-y: auto; height: 100%;">
+            <!-- Botões Header - Lista de triagens -->
+            <div class="d-flex align-items-center">
+                <MudButton Style="margin:8px; height: 50px" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddCircle" @onclick="AddCaminhaoButton">
+                    Novo
+                </MudButton>
+
+                <MudTextField DebounceInterval="500" OnDebounceIntervalElapsed="HandleIntervalElapsed" @bind-Value="_debouncedText"  Label="" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" />
+            </div>
             <!-- Lista de triagens -->
-            <MudButton Style="margin-top:3%" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddCircle" @onclick="AddCaminhaoButton">
-                Novo
-            </MudButton>
             <MudList>
                 @foreach (var triagem in triagensOrdenadas)
                 {
@@ -124,8 +129,36 @@
     private List<Triagem> triagens;
     private List<Triagem> triagensOrdenadas;
     private Triagem selectedTriagem;
-
     public List<Doca> Docas { get; set; }
+    string _debouncedText;
+
+
+    void HandleIntervalElapsed(string debouncedText)
+    {
+        var filtradoTriagens = triagens
+        .Where(t => t.StatusTriagem.Status != StatusCaminhaoEnum.Atendido.ToString())
+        .ToList();
+
+        if (string.IsNullOrWhiteSpace(debouncedText))
+        {
+            // Se o texto estiver vazio, exibe todas as triagens
+            triagensOrdenadas = filtradoTriagens
+                .OrderByDescending(t => t.PrioridadeTriagem.IsPrioridade) // Coloca as triagens com prioridade primeiro
+                .ThenBy(t => t.Id) // Ordena por ID
+                .ToList();
+        }
+        else
+        {
+            // Filtra as triagens que contêm o nome da transportadora correspondente ao texto digitado
+            triagensOrdenadas = filtradoTriagens
+                .OrderByDescending(t => t.PrioridadeTriagem.IsPrioridade) // Coloca as triagens com prioridade primeiro
+                .ThenBy(t => t.Id) // Ordena por ID
+                .Where(t => t.Caminhao.NomeTransportadora.Contains(debouncedText, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        StateHasChanged();
+    }
 
     protected override async Task OnInitializedAsync()
     {
